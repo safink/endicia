@@ -5,6 +5,7 @@ require 'builder'
 require 'uri'
 
 require 'endicia/label'
+require 'endicia/zplii_label'
 require 'endicia/rails_helper'
 
 # Hack fix because Endicia sends response back without protocol in xmlns uri
@@ -89,7 +90,15 @@ module Endicia
     end
 
     result = self.post(url, :body => body)
-    Endicia::Label.new(result).tap do |the_label|
+
+    # Hack to skip right to the ZPL plaintext when desired
+    if root_attributes[:ImageFormat] == 'ZPLII'
+      label_builder = Endicia::ZPLIILabel
+    else
+      label_builder = Endicia::Label
+    end
+
+    label_builder.new(result).tap do |the_label|
       the_label.request_body = body.to_s
       the_label.request_url = url
     end
